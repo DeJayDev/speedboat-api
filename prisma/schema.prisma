@@ -1,0 +1,282 @@
+generator client {
+  provider = "cargo prisma"
+  output   = "../src/db.rs"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Channels {
+  channel_id       BigInt  @id
+  guild_id         BigInt?
+  name             String? @db.VarChar(255)
+  topic            String?
+  type_            Int?    @db.SmallInt
+  first_message_id BigInt?
+  deleted          Boolean
+
+  @@index([name], map: "channel_name")
+  @@map("channels")
+}
+
+model Commands {
+  message_id BigInt  @id
+  plugin     String
+  command    String
+  version    String
+  success    Boolean
+  traceback  String?
+
+  @@index([plugin, command], map: "command_plugin_command")
+  @@index([success], map: "command_success")
+  @@map("commands")
+}
+
+model Events {
+  session   String   @db.VarChar(255)
+  seq       BigInt
+  timestamp DateTime @db.Timestamp(6)
+  event     String   @db.VarChar(255)
+  data      Json
+
+  @@id([session, seq])
+  @@index([data], map: "event_data", type: Gin)
+  @@index([event], map: "event_event")
+  @@index([timestamp], map: "event_timestamp")
+  @@map("events")
+}
+
+model Guild_Bans {
+  user_id  BigInt
+  guild_id BigInt
+  reason   String?
+
+  @@id([user_id, guild_id])
+  @@map("guild_bans")
+}
+
+model Guild_Config_Changes {
+  id         Int      @id @default(autoincrement())
+  user_id    BigInt?
+  guild_id   BigInt
+  before_raw Bytes?
+  after_raw  Bytes
+  created_at DateTime @db.Timestamp(6)
+
+  @@index([user_id, guild_id], map: "guildconfigchange_user_id_guild_id")
+  @@map("guild_config_changes")
+}
+
+model guild_emojis {
+  emoji_id       BigInt   @id
+  guild_id       BigInt
+  name           String   @db.VarChar(255)
+  require_colons Boolean
+  managed        Boolean
+  roles          BigInt[]
+  deleted        Boolean
+
+  @@index([name], map: "guildemoji_name")
+  @@index([roles], map: "guildemoji_roles", type: Gin)
+}
+
+model guild_member_backups {
+  user_id  BigInt
+  guild_id BigInt
+  nick     String?  @db.VarChar(255)
+  roles    BigInt[]
+  mute     Boolean?
+  deaf     Boolean?
+
+  @@id([user_id, guild_id])
+  @@index([roles], map: "guildmemberbackup_roles", type: Gin)
+}
+
+model guild_voice_sessions {
+  id         Int       @id @default(autoincrement())
+  session_id String
+  user_id    BigInt
+  guild_id   BigInt
+  channel_id BigInt
+  started_at DateTime  @db.Timestamp(6)
+  ended_at   DateTime? @db.Timestamp(6)
+
+  @@unique([session_id, user_id, guild_id, channel_id, started_at, ended_at], map: "guildvoicesession_session_id_user_id_guild_id_channel_id_2e82af")
+  @@index([started_at, ended_at], map: "guildvoicesession_started_at_ended_at")
+}
+
+model Guilds {
+  guild_id      BigInt    @id
+  owner_id      BigInt?
+  name          String?
+  icon          String?
+  splash        String?
+  region        String?
+  last_ban_sync DateTime? @db.Timestamp(6)
+  config        Json?
+  config_raw    Bytes?
+  enabled       Boolean
+  whitelist     Json
+  added_at      DateTime  @db.Timestamp(6)
+
+  @@index([config], map: "guild_config", type: Gin)
+  @@index([whitelist], map: "guild_whitelist", type: Gin)
+  @@map("guilds")
+}
+
+model infractions {
+  id         Int       @id @default(autoincrement())
+  guild_id   BigInt
+  user_id    BigInt
+  actor_id   BigInt?
+  kind       Int       @map("type")
+  reason     String?
+  metadata   Json
+  expires_at DateTime? @db.Timestamp(6)
+  created_at DateTime  @db.Timestamp(6)
+  active     Boolean
+  messaged   Boolean?
+
+  @@index([guild_id, user_id], map: "infraction_guild_id_user_id")
+  @@index([metadata], map: "infraction_metadata", type: Gin)
+}
+
+model message_archives {
+  archive_id  String   @id @db.Uuid
+  message_ids Json
+  created_at  DateTime @db.Timestamp(6)
+  expires_at  DateTime @db.Timestamp(6)
+
+  @@index([created_at], map: "messagearchive_created_at")
+  @@index([expires_at], map: "messagearchive_expires_at")
+  @@index([message_ids], map: "messagearchive_message_ids", type: Gin)
+}
+
+model messages {
+  id                BigInt             @id
+  channel_id        BigInt
+  guild_id          BigInt?
+  author_id         String
+  content           String
+  timestamp         DateTime           @db.Timestamp(6)
+  edited_timestamp  DateTime?          @db.Timestamp(6)
+  deleted           Boolean
+  num_edits         BigInt
+  command           String?
+  mentions          BigInt[]
+  emojis            BigInt[]
+  attachments       String[]
+  embeds            Json?
+  starboard_entries starboard_entries?
+
+  @@index([attachments], map: "message_attachments", type: Gin)
+  @@index([author_id], map: "message_author_id")
+  @@index([author_id, guild_id, channel_id], map: "message_author_id_guild_id_channel_id")
+  @@index([channel_id], map: "message_channel_id")
+  @@index([deleted], map: "message_deleted")
+  @@index([embeds], map: "message_embeds", type: Gin)
+  @@index([emojis], map: "message_emojis", type: Gin)
+  @@index([guild_id], map: "message_guild_id")
+  @@index([mentions], map: "message_mentions", type: Gin)
+  @@index([timestamp], map: "message_timestamp")
+  @@index([mentions], map: "messages_mentions", type: Gin)
+}
+
+model notifications {
+  id         Int      @id @default(autoincrement())
+  kind       Int      @map("type")
+  metadata   Json
+  read       Boolean
+  created_at DateTime @db.Timestamp(6)
+
+  @@index([created_at, read], map: "notification_created_at_read")
+  @@index([metadata], map: "notification_metadata", type: Gin)
+}
+
+model reactions {
+  id         Int     @id @default(autoincrement())
+  message_id BigInt
+  user_id    BigInt
+  emoji_id   BigInt?
+  emoji_name String
+
+  @@unique([message_id, user_id, emoji_id, emoji_name], map: "reaction_message_id_user_id_emoji_id_emoji_name")
+  @@index([emoji_name, emoji_id], map: "reaction_emoji_name_emoji_id")
+  @@index([user_id], map: "reaction_user_id")
+}
+
+model reminders {
+  message_id BigInt   @id
+  created_at DateTime @db.Timestamp(6)
+  remind_at  DateTime @db.Timestamp(6)
+  content    String
+}
+
+model starboard_entries {
+  message_id      BigInt   @id
+  star_channel_id BigInt?
+  star_message_id BigInt?
+  stars           BigInt[]
+  blocked_stars   BigInt[]
+  blocked         Boolean
+  dirty           Boolean
+  messages        messages @relation(fields: [message_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([star_channel_id, star_message_id], map: "starboardentry_star_channel_id_star_message_id")
+  @@index([stars], map: "starboard_entries_stars", type: Gin)
+  @@index([blocked_stars], map: "starboardentry_blocked_stars", type: Gin)
+  @@index([stars], map: "starboardentry_stars", type: Gin)
+}
+
+model starboardblock {
+  id        Int    @id @default(autoincrement())
+  guild_id  BigInt
+  entity_id BigInt
+  actor_id  BigInt
+
+  @@unique([guild_id, entity_id], map: "starboardblock_guild_id_entity_id")
+}
+
+model tags {
+  guild_id   BigInt
+  author_id  BigInt
+  name       String
+  content    String
+  times_used Int
+  created_at DateTime @db.Timestamp(6)
+
+  @@id([guild_id, name])
+}
+
+model Users {
+  user_id       String   @id
+  username      String
+  discriminator String
+  avatar        String?
+  bot           Boolean
+  created_at    DateTime @db.Timestamp(6)
+  admin         Boolean
+
+  @@unique([user_id, username, discriminator], map: "user_user_id_username_discriminator")
+  @@index([username(ops: raw("gin_trgm_ops"))], map: "users_username_trgm", type: Gin)
+  @@map("users")
+}
+
+model xp {
+  user_id  BigInt
+  guild_id BigInt
+  xp       BigInt
+
+  @@id([guild_id, user_id])
+}
+
+model xpblock {
+  id       Int    @id @default(autoincrement())
+  guild_id BigInt
+  user_id  BigInt
+  actor_id BigInt
+
+  @@unique([guild_id, user_id], map: "xpblock_guild_id_user_id")
+}

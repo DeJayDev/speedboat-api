@@ -1,0 +1,26 @@
+[package]
+name = "speedboat-api"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+members = [
+    "prisma-cli",
+]
+
+[profile.dev]
+debug = 0
+
+[dependencies]
+prisma-client-rust = { git = "https://github.com/Brendonovich/prisma-client-rust", tag = "0.6.3", default-features = false, features = ["postgresql"] }
+serde = { version = "1.0.147", features = ["derive"] }
+serde_json = "1.0.87"
+dotenv = "0.15.0"
+actix-web = {version = "4.2.1", default-features = false, features = ["macros", "experimental-io-uring"]}
+actix-identity = "0.5.2"
+actix-session = {version = "0.7.2", features = ["cookie-session"]}
+reqwest = { version = "0.11", features = ["blocking", "json"] }
+oauth2 = "4.2.3"
+url = "2.3.1"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
