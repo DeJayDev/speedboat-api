@@ -1,6 +1,5 @@
 use crate::AppData;
 use actix_identity::Identity;
-use actix_session::SessionExt;
 use actix_web::{get, http::header::LOCATION, web::Data, HttpRequest, HttpResponse, Responder};
 use actix_web::{web, HttpMessage};
 use oauth2::reqwest::async_http_client;

@@ -14,12 +14,13 @@ use actix_web::{
     web::{scope, Data},
     App, HttpResponse, HttpServer,
 };
+use dotenv::dotenv;
+use oauth2::{basic::BasicClient, AuthUrl, ClientId, ClientSecret, RedirectUrl, TokenUrl};
 
 mod db;
 use db::PrismaClient;
 
 mod routes;
-use oauth2::{basic::BasicClient, AuthUrl, ClientId, ClientSecret, RedirectUrl, TokenUrl};
 use routes::{
     auth::{login, login_callback, logout},
     guilds::{
@@ -29,22 +30,20 @@ use routes::{
     users::{get_user, get_user_guilds, get_user_self},
 };
 
-use dotenv::dotenv;
-
 pub struct AppData {
     prisma: Arc<PrismaClient>, // PrismaClient doesn't implement Clone, so we can't use it without wrapping it
     oauth: BasicClient,
 }
 
 #[get("/")]
-async fn index(user: Option<Identity>, data: Data<AppData>) -> HttpResponse {
+async fn index(identity: Option<Identity>, data: Data<AppData>) -> HttpResponse {
     let response = format!("Welcome to Speedboat API {}, powered by Actix!", "v0.1");
 
-    if let Some(user) = user {
+    if let Some(identity) = identity {
         let user: db::users::Data = data
             .prisma
             .users()
-            .find_first(vec![db::users::user_id::equals(user.id().unwrap())])
+            .find_first(vec![db::users::user_id::equals(identity.id().unwrap())])
             .exec()
             .await
             .unwrap()

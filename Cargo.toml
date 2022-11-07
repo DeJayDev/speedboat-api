@@ -18,7 +18,7 @@ serde_json = "1.0.87"
 dotenv = "0.15.0"
 actix-web = {version = "4.2.1", default-features = false, features = ["macros", "experimental-io-uring"]}
 actix-identity = "0.5.2"
-actix-session = {version = "0.7.2", features = ["cookie-session"]}
+actix-session = { version = "0.7.2", features = ["cookie-session"] }
 reqwest = { version = "0.11", features = ["blocking", "json"] }
 oauth2 = "4.2.3"
 url = "2.3.1"
